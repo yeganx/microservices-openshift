@@ -9,4 +9,27 @@ Composed by 3 different maven modules:
    - ejb: service enterprise beans
    - ear: packaging
 
-It also contains a configuration folder which keeps the EAP configuration file to run on Openshift. In this project, a datasource definition named `java:jboss/datasources/BlacklistDS` is required in order to be able to persist data. It has been parameterized, so all the ds definition may be set via parameters and environment variables.
+It also contains a configuration folder which keeps the EAP configuration file to run on Openshift. Main configuration changes:
+
+- Datasource definition:
+
+
+```
+<subsystem xmlns="urn:jboss:domain:datasources:1.2">
+    <datasources>
+        <datasource jndi-name="java:jboss/datasources/BlacklistDS" enabled="true" use-java-context="true" pool-name="BlacklistDS">
+            <connection-url>jdbc:mysql://${env.DATABASE_SERVICE_HOST}:${env.DATABASE_SERVICE_PORT:3306}/${env.MYSQL_DATABASE:blacklist}</connection-url>
+            <driver>mysql</driver>
+            <security>
+              <user-name>${env.MYSQL_USER:passport}</user-name>
+              <password>${env.MYSQL_PASSWORD}</password>
+            </security>
+        </datasource>
+        <drivers>
+            <driver name="mysql" module="com.mysql">
+                <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>
+            </driver>
+        </drivers>
+    </datasources>
+</subsystem>
+```
