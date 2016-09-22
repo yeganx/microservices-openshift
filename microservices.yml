@@ -1,0 +1,1114 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: microservices-example
+  annotations:
+    description: Openshift template for demonstrating EAP microservices
+    tags: eap,microservices
+    version: 0.0.1
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${INTERNATIONAL_SECURITY_APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${INTERNATIONAL_SECURITY_APP_NAME}:latest
+    resources: {}
+    source:
+      contextDir: international-security-service
+      git:
+        ref: ${GIT_REF}
+        uri: ${GIT_URI}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:1.4
+          namespace: openshift
+      type: Source
+    triggers:
+    - generic:
+        secret: ${INTERNATIONAL_SECURITY_GENERIC_SECRET}
+      type: Generic
+    - github:
+        secret: ${INTERNATIONAL_SECURITY_GITHUB_SECRET}
+      type: GitHub
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${PASSPORT_BLACKLIST_APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${PASSPORT_BLACKLIST_APP_NAME}:latest
+    resources: {}
+    source:
+      contextDir: passport-blacklist-service
+      git:
+        ref: ${GIT_REF}
+        uri: ${GIT_URI}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:1.4
+          namespace: openshift
+      type: Source
+    triggers:
+    - generic:
+        secret: ${PASSPORT_BLACKLIST_GENERIC_SECRET}
+      type: Generic
+    - github:
+        secret: ${PASSPORT_BLACKLIST_GITHUB_SECRET}
+      type: GitHub
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${TRIP_VALIDATION_APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${TRIP_VALIDATION_APP_NAME}:latest
+    resources: {}
+    source:
+      contextDir: trip-validation-service
+      git:
+        ref: ${GIT_REF}
+        uri: ${GIT_URI}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:1.4
+          namespace: openshift
+      type: Source
+    triggers:
+    - generic:
+        secret: ${TRIP_VALIDATION_GENERIC_SECRET}
+      type: Generic
+    - github:
+        secret: ${TRIP_VALIDATION_GITHUB_SECRET}
+      type: GitHub
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${RESTRICTED_COUNTRIES_APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${RESTRICTED_COUNTRIES_APP_NAME}:latest
+    resources: {}
+    source:
+      contextDir: restricted-countries-service
+      git:
+        ref: ${GIT_REF}
+        uri: ${GIT_URI}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:1.4
+          namespace: openshift
+      type: Source
+    triggers:
+    - generic:
+        secret: ${RESTRICTED_COUNTRIES_GENERIC_SECRET}
+      type: Generic
+    - github:
+        secret: ${RESTRICTED_COUNTRIES_GITHUB_SECRET}
+      type: GitHub
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${INTERNATIONAL_SECURITY_APP_NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${PASSPORT_BLACKLIST_APP_NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${TRIP_VALIDATION_APP_NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${RESTRICTED_COUNTRIES_APP_NAME}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: mysql-ephemeral-template
+    name: ${BLACKLIST_DB_NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${BLACKLIST_DB_NAME}
+    strategy:
+      recreateParams: {}
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${BLACKLIST_DB_NAME}
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_HOST
+            value: ${BLACKLIST_DB_NAME}
+          - name: DATABASE_SERVICE_PORT
+            value: ${BLACKLIST_DATABASE_SERVICE_PORT}
+          - name: MYSQL_USER
+            value: ${BLACKLIST_DATABASE_USER}
+          - name: MYSQL_PASSWORD
+            value: ${BLACKLIST_DATABASE_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${BLACKLIST_DB_NAME}
+          image: registry.access.redhat.com/rhscl/mysql-56-rhel7@sha256:ec43bf4535d16f8d66890559e9851472f3de46e808e25afd4caca0dea2eb6260
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 3306
+            timeoutSeconds: 1
+          name: ${BLACKLIST_DB_NAME}-mysql
+          ports:
+          - containerPort: 3306
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE -e 'SELECT 1'
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: ${BLACKLIST_DB_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: ${BLACKLIST_DB_NAME}-data
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${BLACKLIST_DB_NAME}-mysql
+        from:
+          kind: ImageStreamTag
+          name: mysql:5.6
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${INTERNATIONAL_SECURITY_APP_NAME}
+  spec:
+    replicas: 1	
+    selector:
+      deploymentconfig: ${INTERNATIONAL_SECURITY_APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${MICROSERVICES_APP_NAME}
+          deploymentconfig: ${INTERNATIONAL_SECURITY_APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_HOST
+            value: ${INT_SEC_DB_NAME}
+          - name: DATABASE_SERVICE_PORT
+            value: ${INT_SEC_DATABASE_SERVICE_PORT}
+          - name: MYSQL_USER
+            value: ${INT_SEC_DATABASE_USER}
+          - name: MYSQL_PASSWORD
+            value: ${INT_SEC_DATABASE_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${INT_SEC_DB_NAME}
+          - name: AMQ_USER
+            value: ${AMQ_USER}
+          - name: AMQ_PASSWORD
+            value: ${AMQ_PASSWORD}
+          - name: AMQ_SERVICE_HOST
+            value: ${BROKER_AMQ_NAME}
+          - name: INTERNATIONAL_SECURITY_HOST
+            value: ${INTERNATIONAL_SECURITY_APP_NAME}
+          - name: INTERNATIONAL_SECURITY_PORT
+            value: "8080"
+          - name: INTERNATIONAL_SECURITY_PROTOCOL
+            value: http
+          - name: INTERNATIONAL_SECURITY_BASEURI
+            value: /security
+          imagePullPolicy: Always
+          name: ${INTERNATIONAL_SECURITY_APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/readinessProbe.sh
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          livenessProbe:
+            initialDelaySeconds: 30
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/livenessProbe.sh
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${INTERNATIONAL_SECURITY_APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${INTERNATIONAL_SECURITY_APP_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${PASSPORT_BLACKLIST_APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${PASSPORT_BLACKLIST_APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: ${MICROSERVICES_APP_NAME}
+          deploymentconfig: ${PASSPORT_BLACKLIST_APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_HOST
+            value: ${BLACKLIST_DB_NAME}
+          - name: DATABASE_SERVICE_PORT
+            value: ${BLACKLIST_DATABASE_SERVICE_PORT}
+          - name: MYSQL_USER
+            value: ${BLACKLIST_DATABASE_USER}
+          - name: MYSQL_PASSWORD
+            value: ${BLACKLIST_DATABASE_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${BLACKLIST_DB_NAME}
+          imagePullPolicy: Always
+          name: ${PASSPORT_BLACKLIST_APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/readinessProbe.sh
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          livenessProbe:
+            initialDelaySeconds: 30
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/livenessProbe.sh
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${PASSPORT_BLACKLIST_APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${PASSPORT_BLACKLIST_APP_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: mysql-ephemeral-template
+    name: ${INT_SEC_DB_NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${INT_SEC_DB_NAME}
+    strategy:
+      recreateParams: {}
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${INT_SEC_DB_NAME}
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_HOST
+            value: ${INT_SEC_DB_NAME}
+          - name: DATABASE_SERVICE_PORT
+            value: ${INT_SEC_DATABASE_SERVICE_PORT}
+          - name: MYSQL_USER
+            value: ${INT_SEC_DATABASE_USER}
+          - name: MYSQL_PASSWORD
+            value: ${INT_SEC_DATABASE_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${INT_SEC_DB_NAME}
+          image: registry.access.redhat.com/rhscl/mysql-56-rhel7@sha256:ec43bf4535d16f8d66890559e9851472f3de46e808e25afd4caca0dea2eb6260
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 3306
+            timeoutSeconds: 1
+          name: ${INT_SEC_DB_NAME}-mysql
+          ports:
+          - containerPort: 3306
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE -e 'SELECT 1'
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: ${INT_SEC_DB_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: ${INT_SEC_DB_NAME}-data
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${INT_SEC_DB_NAME}-mysql
+        from:
+          kind: ImageStreamTag
+          name: mysql:5.6
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${TRIP_VALIDATION_APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${TRIP_VALIDATION_APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: ${MICROSERVICES_APP_NAME}
+          deploymentconfig: ${TRIP_VALIDATION_APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: PASSPORT_BLACKLIST_HOST
+            value: ${PASSPORT_BLACKLIST_APP_NAME}
+          - name: PASSPORT_BLACKLIST_PORT
+            value: "8080"
+          - name: PASSPORT_BLACKLIST_PROTOCOL
+            value: http
+          - name: PASSPORT_BLACKLIST_BASEURI
+            value: /passports/blacklist
+          - name: INTERNATIONAL_SECURITY_HOST
+            value: ${INTERNATIONAL_SECURITY_APP_NAME}
+          - name: INTERNATIONAL_SECURITY_PORT
+            value: "8080"
+          - name: INTERNATIONAL_SECURITY_PROTOCOL
+            value: http
+          - name: INTERNATIONAL_SECURITY_BASEURI
+            value: /security
+          imagePullPolicy: Always
+          name: ${TRIP_VALIDATION_APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/readinessProbe.sh
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          livenessProbe:
+            initialDelaySeconds: 30
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/livenessProbe.sh
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        -  ${TRIP_VALIDATION_APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name:  ${TRIP_VALIDATION_APP_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: amq62-basic
+      xpaas: 1.3.1
+    name: ${BROKER_AMQ_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ${BROKER_AMQ_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 0
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${MICROSERVICES_APP_NAME}
+          deploymentConfig: ${BROKER_AMQ_NAME}
+        name: ${BROKER_AMQ_NAME}
+      spec:
+        containers:
+        - env:
+          - name: AMQ_USER
+            value: ${AMQ_USER}
+          - name: AMQ_PASSWORD
+            value: ${AMQ_PASSWORD}
+          - name: AMQ_TRANSPORTS
+            value: openwire
+          - name: AMQ_QUEUES
+          - name: AMQ_TOPICS
+          - name: MQ_SERIALIZABLE_PACKAGES
+          - name: AMQ_MESH_DISCOVERY_TYPE
+            value: kube
+          - name: AMQ_MESH_SERVICE_NAME
+            value: ${BROKER_AMQ_MESH_SERVICE_NAME}
+          - name: AMQ_MESH_SERVICE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: AMQ_STORAGE_USAGE_LIMIT
+            value: 100 gb
+          image: registry.access.redhat.com/jboss-amq-6/amq62-openshift@sha256:6397861d3b8d52f29c5e157b00a6999b8baf4ac7215af368a7b7d90ef6595a10
+          imagePullPolicy: Always
+          name: ${BROKER_AMQ_NAME}
+          ports:
+          - containerPort: 8778
+            name: jolokia
+            protocol: TCP
+          - containerPort: 5672
+            name: amqp
+            protocol: TCP
+          - containerPort: 1883
+            name: mqtt
+            protocol: TCP
+          - containerPort: 61613
+            name: stomp
+            protocol: TCP
+          - containerPort: 61616
+            name: tcp
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/amq/bin/readinessProbe.sh
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 60
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${BROKER_AMQ_NAME}
+        from:
+          kind: ImageStreamTag
+          name: jboss-amq-62:1.3
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${RESTRICTED_COUNTRIES_APP_NAME}
+  spec:
+    replicas: 1	
+    selector:
+      deploymentconfig: ${RESTRICTED_COUNTRIES_APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${MICROSERVICES_APP_NAME}
+          deploymentconfig: ${RESTRICTED_COUNTRIES_APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: AMQ_USER
+            value: ${AMQ_USER}
+          - name: AMQ_PASSWORD
+            value: ${AMQ_PASSWORD}
+          - name: AMQ_SERVICE_HOST
+            value: ${BROKER_AMQ_NAME}
+          - name: INTERNATIONAL_SECURITY_HOST
+            value: ${INTERNATIONAL_SECURITY_APP_NAME}
+          - name: INTERNATIONAL_SECURITY_PORT
+            value: "8080"
+          - name: INTERNATIONAL_SECURITY_PROTOCOL
+            value: http
+          - name: INTERNATIONAL_SECURITY_BASEURI
+            value: /security
+          imagePullPolicy: Always
+          name: ${RESTRICTED_COUNTRIES_APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/readinessProbe.sh
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          livenessProbe:
+            initialDelaySeconds: 30
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/livenessProbe.sh
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${RESTRICTED_COUNTRIES_APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${RESTRICTED_COUNTRIES_APP_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${INTERNATIONAL_SECURITY_APP_NAME}
+  spec:
+    host: ${INTERNATIONAL_SECURITY_ROUTE_HOST}
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${INTERNATIONAL_SECURITY_APP_NAME}
+  status: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${PASSPORT_BLACKLIST_APP_NAME}
+  spec:
+    host: ${PASSPORT_BLACKLIST_ROUTE_HOST}
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${PASSPORT_BLACKLIST_APP_NAME}
+  status: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${TRIP_VALIDATION_APP_NAME}
+  spec:
+    host: ${TRIP_VALIDATION_ROUTE_HOST}
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${TRIP_VALIDATION_APP_NAME}
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: mysql-ephemeral-template
+    name: ${BLACKLIST_DB_NAME}
+  spec:
+    ports:
+    - name: mysql
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+    selector:
+      name: ${BLACKLIST_DB_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${INTERNATIONAL_SECURITY_APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      deploymentconfig: ${INTERNATIONAL_SECURITY_APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${PASSPORT_BLACKLIST_APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      deploymentconfig: ${PASSPORT_BLACKLIST_APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: mysql-ephemeral-template
+    name: ${INT_SEC_DB_NAME}
+  spec:
+    ports:
+    - name: mysql
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+    selector:
+      name: ${INT_SEC_DB_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${TRIP_VALIDATION_APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      deploymentconfig: ${TRIP_VALIDATION_APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The broker's OpenWire port.
+    creationTimestamp: null
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+      template: amq62-basic
+      xpaas: 1.3.1
+    name: ${BROKER_AMQ_NAME}-tcp
+  spec:
+    ports:
+    - port: 61616
+      protocol: TCP
+      targetPort: 61616
+    selector:
+      deploymentConfig: ${BROKER_AMQ_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${MICROSERVICES_APP_NAME}
+    name: ${RESTRICTED_COUNTRIES_APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      deploymentconfig: ${RESTRICTED_COUNTRIES_APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+parameters:
+- description: Microservices set name
+  name: MICROSERVICES_APP_NAME
+  required: true
+  value: microservices
+- description: Git URI for microservices source
+  name: GIT_URI
+  required: true
+  value: https://github.com/dsanchor/microservices-openshift.git
+- description: Git reference for microservices source (either master or branch)
+  name: GIT_REF
+  required: true
+  value: master
+- description: Trip validation microservice name. This microservice is the main one
+  name: TRIP_VALIDATION_APP_NAME
+  value: trip-validation-service
+  required: true
+- description: Trip validation microservice generic secret
+  name: TRIP_VALIDATION_GENERIC_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: Trip validation microservice github secret
+  name: TRIP_VALIDATION_GITHUB_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: 'Trip validation microservice route host. Example: <app-name>-<project-name>.<domain>'
+  name: TRIP_VALIDATION_ROUTE_HOST
+- description: International security microservice name
+  name: INTERNATIONAL_SECURITY_APP_NAME
+  value: int-security-service
+  required: true
+- description: International security microservice generic secret
+  name: INTERNATIONAL_SECURITY_GENERIC_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: International security microservice github secret
+  name: INTERNATIONAL_SECURITY_GITHUB_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: 'International security microservice route host. Example: <app-name>-<project-name>.<domain>'
+  name: INTERNATIONAL_SECURITY_ROUTE_HOST
+- description: Passport blacklist microservice name
+  name: PASSPORT_BLACKLIST_APP_NAME
+  value: passport-blacklist-serv
+  required: true
+- description: Passport blacklist microservice generic secret
+  name: PASSPORT_BLACKLIST_GENERIC_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: Passport blacklist microservice github secret
+  name: PASSPORT_BLACKLIST_GITHUB_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: 'Passport blacklist microservice route host. Example: <app-name>-<project-name>.<domain>'
+  name: PASSPORT_BLACKLIST_ROUTE_HOST
+- description: Passport blacklist data base name
+  name: BLACKLIST_DB_NAME
+  value: blacklistdb
+  required: true
+- description: Passport blacklist data base service port
+  name: BLACKLIST_DATABASE_SERVICE_PORT
+  value: '3306'
+  required: true
+- description: Passport blacklist data base username
+  name: BLACKLIST_DATABASE_USER
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: Passport blacklist data base password
+  name: BLACKLIST_DATABASE_PASSWORD
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: International security data base name
+  name: INT_SEC_DB_NAME
+  value: recordsdb
+  required: true
+- description: International security data base service port
+  name: INT_SEC_DATABASE_SERVICE_PORT
+  value: '3306'
+  required: true
+- description: International security data base username
+  name: INT_SEC_DATABASE_USER
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: International security data base password
+  name: INT_SEC_DATABASE_PASSWORD
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: AMQ broker name.
+  name: BROKER_AMQ_NAME
+  value: broker-amq
+  required: true
+- description: AMQ username
+  name: AMQ_USER
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: AMQ password
+  name: AMQ_PASSWORD
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- description: AMQ broker mesh service name.
+  name: BROKER_AMQ_MESH_SERVICE_NAME
+  value: broker-amq-tcp
+  required: true
+- description: Restricted countries microservice name
+  name: RESTRICTED_COUNTRIES_APP_NAME
+  value: rest-countries-service
+  required: true
+- description: Restricted countries microservice generic secret
+  name: RESTRICTED_COUNTRIES_GENERIC_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
+- description: Restricted countries microservice github secret
+  name: RESTRICTED_COUNTRIES_GITHUB_SECRET
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  required: true
