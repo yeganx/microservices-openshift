@@ -39,7 +39,7 @@ It is mainly composed by:
 
 - 4 EAP instances (basic ones)
 - 2 MySql instances (using ephemeral databases for the demonstration, so stored data will be lost in case of pods recreation)
-- 1 AMQ instance (In case you would like to create an AMQ mesh, you must execute 'oc policy add-role-to-user view system:serviceaccount:<project-name>:default`)
+- 1 AMQ instance (In case you would like to create an AMQ mesh, you must execute `oc policy add-role-to-user view system:serviceaccount:<project-name>:default`)
 
 Only 3 services are exposed to the outside world: 
 
