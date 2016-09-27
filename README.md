@@ -26,7 +26,7 @@ There are 3 different REST services plus one AMQ server which maintains 2 differ
    - update records: it will modify those PENDING request to OK or REJECTED. This operation will be used by message consumers to notify status changes related to PENDING trip validations.
    - remove records: it will remove records from records DB. 
 
-This service also contains a MDB that will consume messages from the remote queue 'java:/jms/queue/NormalProcedureQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
+     This service also contains a MDB that will consume messages from the remote queue 'java:/jms/queue/NormalProcedureQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
 
 4. **Restricted countries service**. It is a basic MDB that consumes messages from the remote queue 'java:/jms/queue/RestrictedCountriesQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
 
