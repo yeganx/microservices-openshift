@@ -685,6 +685,7 @@ objects:
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 60
+        serviceAccount: default
     triggers:
     - imageChangeParams:
         automatic: true
