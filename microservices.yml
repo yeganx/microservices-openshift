@@ -31,6 +31,9 @@ objects:
           kind: ImageStreamTag
           name: jboss-eap64-openshift:1.4
           namespace: openshift
+        env:
+          - name: MAVEN_MIRROR_URL
+            value: ${MAVEN_MIRROR_URL}
       type: Source
     triggers:
     - generic:
@@ -67,6 +70,9 @@ objects:
           kind: ImageStreamTag
           name: jboss-eap64-openshift:1.4
           namespace: openshift
+        env:
+          - name: MAVEN_MIRROR_URL
+            value: ${MAVEN_MIRROR_URL}
       type: Source
     triggers:
     - generic:
@@ -107,6 +113,9 @@ objects:
           kind: ImageStreamTag
           name: jboss-eap64-openshift:1.4
           namespace: openshift
+        env:
+          - name: MAVEN_MIRROR_URL
+            value: ${MAVEN_MIRROR_URL}
       type: Source
     triggers:
     - generic:
@@ -144,6 +153,9 @@ objects:
           kind: ImageStreamTag
           name: jboss-eap64-openshift:1.4
           namespace: openshift
+        env:
+          - name: MAVEN_MIRROR_URL
+            value: ${MAVEN_MIRROR_URL}
       type: Source
     triggers:
     - generic:
@@ -1117,3 +1129,5 @@ parameters:
   from: '[a-zA-Z0-9]{16}'
   generate: expression
   required: true
+- description: Mavel mirror url. In case it is set, all the artifacts needed by the maven build process will be obtained from this mirror 
+  name: MAVEN_MIRROR_URL
