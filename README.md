@@ -26,7 +26,7 @@ There are 3 different REST services plus one AMQ server which maintains 2 differ
    - update records: it will modify those PENDING request to OK or REJECTED. This operation will be used by message consumers to notify status changes related to PENDING trip validations.
    - remove records: it will remove records from records DB. 
 
-This service also contains a MDB that will consume messages from the remote queue 'java:/jms/queue/NormalProcedureQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
+     This service also contains a MDB that will consume messages from the remote queue 'java:/jms/queue/NormalProcedureQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
 
 4. **Restricted countries service**. It is a basic MDB that consumes messages from the remote queue 'java:/jms/queue/RestrictedCountriesQueue', process them and finally, notify via REST the final status of the trip validation to the international security service.
 
@@ -39,7 +39,7 @@ It is mainly composed by:
 
 - 4 EAP instances (basic ones)
 - 2 MySql instances (using ephemeral databases for the demonstration, so stored data will be lost in case of pods recreation)
-- 1 AMQ instance (In case you would like to create an AMQ mesh, you must execute 'oc policy add-role-to-user view system:serviceaccount:<project-name>:default`)
+- 1 AMQ instance (In case you would like to create an AMQ mesh, you must execute `oc policy add-role-to-user view system:serviceaccount:<project-name>:default`)
 
 Only 3 services are exposed to the outside world: 
 
