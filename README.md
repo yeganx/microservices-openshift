@@ -34,6 +34,7 @@ There are 3 different REST services plus one AMQ server which maintains 2 differ
 ## Openshift template
 
 I have also included a Openshift template which describes the microservices composition and facilitate the instatiation of the whole example.
+:)
 
 It is mainly composed by:
 
